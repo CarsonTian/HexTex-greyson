@@ -5,6 +5,13 @@
     android:layout_height="match_parent"
     android:id ="@+id/frag_safetymap">
 
+    <Spinner
+        android:id="@+id/spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:entries="@array/spinnerText"
+        />
+
     <com.google.android.gms.maps.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"

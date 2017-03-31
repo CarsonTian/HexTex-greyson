@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">USafe</string>
+    <string-array name="spinnerText">
+        <item>places</item>
+        <item>events</item>
+        <item>all</item>
+    </string-array>
 </resources>
