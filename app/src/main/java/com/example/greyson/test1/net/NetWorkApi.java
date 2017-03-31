@@ -19,17 +19,17 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 
 public class NetWorkApi {
-    private static volatile NetWorkApi instance;
-    private OkHttpClient mOkHttpClient;
-    private Retrofit mRetrofit;
+            private static volatile NetWorkApi instance;
+            private OkHttpClient mOkHttpClient;
+            private Retrofit mRetrofit;
 
-    public static NetWorkApi getInstance() {
-        if (instance == null) {
-            synchronized (NetWorkApi.class) {
-                if (instance == null) {
-                    instance = new NetWorkApi();
+        public static NetWorkApi getInstance() {
+            if (instance == null) {
+                synchronized (NetWorkApi.class) {
+                    if (instance == null) {
+                        instance = new NetWorkApi();
+                    }
                 }
-            }
         }
         return instance;
     }
@@ -68,6 +68,7 @@ public class NetWorkApi {
         }
         return mRetrofit;
     }
+
 
 
 }

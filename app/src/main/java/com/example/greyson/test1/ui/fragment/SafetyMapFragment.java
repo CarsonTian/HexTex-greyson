@@ -28,12 +28,15 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 
 public class SafetyMapFragment extends BaseFragment implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
     private GoogleMap googleMap;
     private GoogleApiClient mGoogleApiClient;
     public static final String TAG = FragmentActivity.class.getSimpleName();
-    private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    //private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private LocationRequest mLocationRequest;
     private Context mContext;
     MapView mapView;
@@ -71,14 +74,11 @@ public class SafetyMapFragment extends BaseFragment implements GoogleApiClient.C
                     return;
                 }
                 googleMap.setMyLocationEnabled(true);
-                    googleMap.getUiSettings().setZoomControlsEnabled(true);  // 右下角的放大縮小功能
-                    googleMap.getUiSettings().setCompassEnabled(true);       // 左上角的指南針，要兩指旋轉才會出現
-                    googleMap.getUiSettings().setMapToolbarEnabled(true);
-                    googleMap.animateCamera(CameraUpdateFactory.zoomBy(13));
-                }
-
-
-
+                googleMap.getUiSettings().setZoomControlsEnabled(true);  // 右下角的放大縮小功能
+                googleMap.getUiSettings().setCompassEnabled(true);       // 左上角的指南針，要兩指旋轉才會出現
+                googleMap.getUiSettings().setMapToolbarEnabled(true);
+                googleMap.animateCamera(CameraUpdateFactory.zoomBy(13));
+            }
         });
 
         if (mGoogleApiClient == null) {
@@ -93,9 +93,6 @@ public class SafetyMapFragment extends BaseFragment implements GoogleApiClient.C
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(2000)        // 1 seconds, in milliseconds
                 .setFastestInterval(1000); // 1 second, in milliseconds
-
-
-
         return view;
     }
 
@@ -103,11 +100,9 @@ public class SafetyMapFragment extends BaseFragment implements GoogleApiClient.C
     public void onResume() {
         super.onResume();
         mGoogleApiClient.connect();
-
     }
 
-    @Override
-    public void onPause() {
+    @Override public void onPause() {
         super.onPause();
         if (mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect();
@@ -145,24 +140,54 @@ public class SafetyMapFragment extends BaseFragment implements GoogleApiClient.C
 
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        handleNewLocation(location);
+        boolean range = false;
+        selectLocation(location, range);
     }
 
-    private void handleNewLocation(Location location) {
+    private void selectLocation(Location location, boolean range) {
+        if (compareLocation(location, 2000, range) == false) {
+            compareLocation(location, 5000, range);
+        }
+    }
+
+    public boolean compareLocation(Location location, int dis, boolean range) {
+
+        String json = "[{ \"names\":\"Police1\",\"lai\":\"-37.924404\",\"lon\":\"145.120902\" },{ \"names\":\"Police2\",\"lai\":\"-37.895275\",\"lon\":\"145.125083\"  }]";
+        try {
+            JSONArray jsonArray = new JSONArray(json);
+            for (int i = 0; i < jsonArray.length(); i++) {
+
+                JSONObject jsonObject = (JSONObject) jsonArray.get(i);
+                String name = jsonObject.getString("names");
+                double lai = Double.parseDouble(jsonObject.getString("lai"));
+                double lon = Double.parseDouble(jsonObject.getString("lon"));
+                if (getDistance(handleNewLocation(location).latitude, handleNewLocation(location).longitude, lai, lon) < dis) {
+                    addMark(lai, lon, name);
+                    range = true;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return range;
+    }
+
+    private LatLng handleNewLocation(Location location) {
         Log.d(TAG, location.toString());
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
-
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        if (getDistance(location.getLatitude(), location.getLongitude()) < 2000) {
-            googleMap.addMarker(new MarkerOptions().position(new LatLng(-37.1886, 145.708)).title("Police Station"));
-        }
+        return latLng;
     }
 
-    public double getDistance(double a, double b) {
+    public void addMark(double c, double d, String name) {
+        googleMap.addMarker(new MarkerOptions().position(new LatLng(c, d)).title(name));
+    }
+
+    public double getDistance(double a, double b, double c, double d) {
         float[] results = new float[1];
-        Location.distanceBetween(a, b, -37.1886, 145.708, results);
+        Location.distanceBetween(a, b, c, d, results);
         return results[0];
     }
 
@@ -178,7 +203,9 @@ public class SafetyMapFragment extends BaseFragment implements GoogleApiClient.C
 
     @Override
     public void onLocationChanged(Location location) {
+        boolean range = false;
         googleMap.clear();
-        handleNewLocation(location);
+        selectLocation(location, range);
     }
 }
+
